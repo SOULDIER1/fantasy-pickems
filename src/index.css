@@ -1,8 +1,46 @@
+/* Tailwind v4 imports */
 @import "tailwindcss/preflight";
-@import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
 /* Branding */
+:root {
+  /* define your souldiers color tokens here */
+  --souldiers-black: #000000;
+  --souldiers-gold: #d4af37;
+  --souldiers-accent: #ff6f61;
+}
+
 body {
-  @apply bg-souldiers-black text-souldiers-gold;
+  background-color: var(--souldiers-black);
+  color: var(--souldiers-gold);
+}
+
+a {
+  color: var(--souldiers-accent);
+}
+a:hover {
+  color: var(--souldiers-gold);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--souldiers-gold);
+}
+
+button {
+  background-color: var(--souldiers-accent);
+  color: var(--souldiers-black);
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+}
+button:hover {
+  background-color: var(--souldiers-gold);
+}
+
+input, select {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  color: inherit;
+  background: transparent;
 }

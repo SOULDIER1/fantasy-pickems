@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-// ===== Demo Data =====
-const GAMES = [
-  { id: "NE@BUF", away: "NE Patriots", home: "BUF Bills", kickoff: Date.now() + 3600 * 1000 },
-  { id: "DAL@PHI", away: "DAL Cowboys", home: "PHI Eagles", kickoff: Date.now() + 7200 * 1000 },
-];
-
 const POOLS = {
   QB: ["Patrick Mahomes","Josh Allen","Jalen Hurts","Joe Burrow","Justin Herbert","Lamar Jackson","Tua Tagovailoa","Dak Prescott","Trevor Lawrence","Kirk Cousins"],
   RB: ["Christian McCaffrey","Derrick Henry","Saquon Barkley","Nick Chubb","Josh Jacobs","Austin Ekeler","Tony Pollard","Jonathan Taylor","Alvin Kamara","Bijan Robinson"],
@@ -13,228 +7,178 @@ const POOLS = {
   DEF: ["49ers","Cowboys","Eagles","Jets","Patriots","Steelers","Ravens","Bills","Chiefs","Dolphins"],
 };
 
-// ===== Donation =====
 const DONATION_URL = `https://www.paypal.me/salutetosouldiers/20?locale.x=en_US`;
-function DonateCard() {
+const API_KEY = "67f4c050a11d4bbc9846b5383ee43213";
+
+// === Reusable Card ===
+function Card({ title, children, className }) {
   return (
-    <div style={{border:"1px solid gray", padding:"1rem", borderRadius:"8px", marginBottom:"1rem"}}>
-      <h3>Participate — $20 Donation</h3>
-      <a href={DONATION_URL} target="_blank" rel="noopener noreferrer">
-        Donate $20 via PayPal
-      </a>
-      <p style={{fontSize:"0.8rem", marginTop:"0.5rem"}}>
-        Your donation is required to join this week's competition.
-      </p>
+    <div className={`border border-souldiers-gold rounded-lg bg-souldiers-gray p-4 mb-4 shadow-lg ${className}`}>
+      {title && <h3 className="font-bold text-lg mb-2 text-souldiers-gold drop-shadow-[0_0_6px_#FFD700]">{title}</h3>}
+      {children}
     </div>
   );
 }
 
-// ===== Game Selections =====
+function DonateCard() {
+  return (
+    <Card title="Participate — $20 Donation">
+      <a href={DONATION_URL} target="_blank" rel="noopener noreferrer"
+         className="inline-block px-4 py-2 bg-souldiers-gold text-souldiers-black font-semibold rounded hover:bg-souldiers-accent transition-colors duration-200">
+        Donate $20 via PayPal
+      </a>
+    </Card>
+  );
+}
+
 function GameCard({ g, pick, setPick }) {
   const locked = g.kickoff <= Date.now();
   return (
-    <div style={{border:"1px solid gray", borderRadius:"8px", padding:"1rem", marginBottom:"1rem"}}>
-      <div style={{display:"flex", justifyContent:"space-between"}}>
+    <Card>
+      <div className="flex justify-between mb-2">
         <div>{g.away} @ {g.home}</div>
-        {locked ? <span style={{color:"red"}}>LOCKED</span> :
-         <span style={{color:"orange"}}>Open</span>}
+        {locked ? <span className="text-red-500">LOCKED</span> : <span className="text-souldiers-accent">Open</span>}
       </div>
-      <div style={{display:"flex", justifyContent:"space-around", marginTop:"0.5rem"}}>
+      <div className="flex justify-around mt-3">
         <button disabled={locked} onClick={() => setPick(g.id,g.away)}
-          style={{background: pick===g.away?"green":"black", color:"white", padding:"0.5rem 1rem"}}>
+          className={`px-4 py-2 rounded transition-colors duration-200 ${
+            pick===g.away 
+              ? "bg-souldiers-gold text-souldiers-black" 
+              : "bg-souldiers-black text-souldiers-gold border border-souldiers-gold"
+          } hover:bg-souldiers-gold hover:text-souldiers-black`}>
           {g.away}
         </button>
-        <span>vs</span>
+        <span className="px-2">vs</span>
         <button disabled={locked} onClick={() => setPick(g.id,g.home)}
-          style={{background: pick===g.home?"green":"black", color:"white", padding:"0.5rem 1rem"}}>
+          className={`px-4 py-2 rounded transition-colors duration-200 ${
+            pick===g.home 
+              ? "bg-souldiers-gold text-souldiers-black" 
+              : "bg-souldiers-black text-souldiers-gold border border-souldiers-gold"
+          } hover:bg-souldiers-gold hover:text-souldiers-black`}>
           {g.home}
         </button>
       </div>
-    </div>
+    </Card>
   );
 }
 
-// ===== Fantasy Selection =====
 function FantasySelector({ fantasy, setFantasy }) {
   return (
-    <div style={{marginTop:"1rem"}}>
-      <h3>Pick 3 Fantasy Stars</h3>
-      {["QB","RB","WR","DEF"].map((pos, idx)=>( 
+    <Card title="Pick 3 Fantasy Stars">
+      {["QB","RB","WR","DEF"].map((pos, idx)=>(
         <select key={idx} value={fantasy[idx]||""}
           onChange={(e)=>{ const copy=[...fantasy]; copy[idx]=e.target.value; setFantasy(copy); }}
-          style={{display:"block", margin:"0.5rem 0"}}>
+          className="block mt-2 p-2 rounded bg-souldiers-black text-souldiers-gold border border-souldiers-gold focus:ring-2 focus:ring-souldiers-accent w-full">
           <option value="">Select {pos}</option>
           {POOLS[pos].map(p=><option key={p} value={p}>{p}</option>)}
         </select>
       ))}
-    </div>
+    </Card>
   );
 }
 
-// ===== Tie-Breaker =====
 function TieBreaker({ tiebreaker,setTiebreaker }) {
   return (
-    <div style={{marginTop:"1rem", border:"1px solid gray", padding:"1rem", borderRadius:"8px"}}>
-      <h3>Monday Night Tie-Breaker</h3>
-      <div style={{marginTop:"0.5rem", display:"flex", gap:"0.5rem"}}>
-        <select value={tiebreaker.team} onChange={(e)=>setTiebreaker({...tiebreaker,team:e.target.value})}>
+    <Card title="Monday Night Tie-Breaker">
+      <div className="flex gap-2">
+        <select value={tiebreaker.team} onChange={(e)=>setTiebreaker({...tiebreaker,team:e.target.value})}
+          className="flex-1 p-2 bg-souldiers-black text-souldiers-gold border border-souldiers-gold rounded focus:ring-2 focus:ring-souldiers-accent">
           <option value="">Select Team</option>
           <option value="TeamA">Team A</option>
           <option value="TeamB">Team B</option>
         </select>
         <input type="number" placeholder="Total Points" value={tiebreaker.points}
-          onChange={(e)=>setTiebreaker({...tiebreaker,points:e.target.value})}/>
+          onChange={(e)=>setTiebreaker({...tiebreaker,points:e.target.value})}
+          className="flex-1 p-2 bg-souldiers-black text-souldiers-gold border border-souldiers-gold rounded focus:ring-2 focus:ring-souldiers-accent"/>
       </div>
-    </div>
+    </Card>
   );
 }
 
-// ===== Leaderboard =====
 function Leaderboard({ players }) {
   return (
-    <div style={{marginTop:"1rem", border:"1px solid gray", padding:"1rem", borderRadius:"8px"}}>
-      <h3>Top 10 Leaderboard</h3>
-      <ol>
+    <Card title="Top 10 Leaderboard">
+      <ol className="space-y-1">
         {players.slice(0,10).map((p,i)=>
-          <li key={i}>
-            {p.name} – {p.points} pts {i===0 && "🏆"} {i===1 && "🥈"}
+          <li key={i} className="flex justify-between">
+            <span>{p.name}</span>
+            <span>{p.points} pts {i===0 && "🏆"} {i===1 && "🥈"}</span>
           </li>)}
       </ol>
-    </div>
+    </Card>
   );
 }
 
-// ===== Participant Entry =====
-function ParticipantForm({ addParticipant }) {
-  const [name,setName] = useState("");
-  const submit = ()=>{
-    if(name.trim()){
-      addParticipant(name.trim());
-      setName("");
-    }
-  };
-  return (
-    <div style={{marginTop:"1rem", border:"1px solid gray", padding:"1rem", borderRadius:"8px"}}>
-      <h3>Enter Competition</h3>
-      <input placeholder="Your Name" value={name} onChange={e=>setName(e.target.value)} />
-      <button onClick={submit} style={{marginLeft:"0.5rem"}}>Join</button>
-    </div>
-  );
-}
-
-// ===== Participant Dashboard =====
-function ParticipantDashboard({ participants }) {
-  if (participants.length === 0) return null;
-  return (
-    <div style={{marginTop:"1rem", border:"2px solid blue", padding:"1rem", borderRadius:"8px"}}>
-      <h3>Your Entry This Week</h3>
-      {participants.map((p,i)=>(
-        <div key={i} style={{marginBottom:"1rem", padding:"0.5rem", border:"1px solid gray", borderRadius:"6px"}}>
-          <div><b>{p.name}</b> — {p.points} pts</div>
-          <div><b>Picks:</b> {Object.entries(p.picks).map(([gid,team])=>team?`${gid}: ${team}`:"").join(", ")}</div>
-          <div><b>Fantasy:</b> {p.fantasy.filter(Boolean).join(", ")}</div>
-          <div><b>Tie-Breaker:</b> {p.tiebreaker.team} — {p.tiebreaker.points} pts</div>
-          <div style={{color:"green"}}>✅ Locked In</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ===== Admin Prize Upload (Manual) =====
-function AdminPrizes({prizes,setPrizes}) {
-  const [title,setTitle] = useState("");
-  const [desc,setDesc] = useState("");
-  const addPrize = ()=>{
-    if(title && desc){
-      setPrizes([...prizes,{title,desc}]);
-      setTitle(""); setDesc("");
-    }
-  };
-  return (
-    <div style={{marginTop:"1rem", border:"1px solid gray", padding:"1rem", borderRadius:"8px"}}>
-      <h3>Admin — Upload Weekly Prize</h3>
-      <input placeholder="Prize Title" value={title} onChange={e=>setTitle(e.target.value)} style={{display:"block",marginBottom:"0.5rem"}}/>
-      <textarea placeholder="Description" value={desc} onChange={e=>setDesc(e.target.value)} style={{display:"block",marginBottom:"0.5rem"}}/>
-      <button onClick={addPrize}>Add Prize</button>
-      <ul>
-        {prizes.map((p,i)=><li key={i}><b>{p.title}</b> — {p.desc}</li>)}
-      </ul>
-    </div>
-  );
-}
-
-// ===== Cash Prizes =====
-function CashPrizes({prizes}) {
-  return (
-    <div style={{marginTop:"1rem", border:"1px solid gold", padding:"1rem", borderRadius:"8px"}}>
-      <h3>Cash Prizes This Week</h3>
-      <div>1st Place: ${prizes.firstMin}–${prizes.firstMax}</div>
-      <div>2nd Place: ${prizes.secondMin}–${prizes.secondMax}</div>
-    </div>
-  );
-}
-
-// ===== Main App =====
 export default function App() {
-  const [picks,setPicks] = useState(Object.fromEntries(GAMES.map(g=>[g.id,null])));
+  const [games,setGames] = useState([]);
+  const [picks,setPicks] = useState({});
   const [fantasy,setFantasy] = useState(["","",""]);
   const [tiebreaker,setTiebreaker] = useState({team:"",points:""});
-  const [participants,setParticipants] = useState([]);
-  const [prizes,setPrizes] = useState([]);
-  const [adminCode,setAdminCode] = useState("");
-  const cash = {firstMin:100,firstMax:200,secondMin:50,secondMax:100};
+  const [week,setWeek] = useState(null);
 
-  // simulate scoring (demo mode)
-  useEffect(()=>{
-    if(participants.length>0){
-      setParticipants(prev=>prev.map(p=>({...p,points:Math.floor(Math.random()*200)})));
-    }
-  },[participants.length]);
+  // Fetch current NFL week
+  useEffect(() => {
+    fetch("https://api.sportsdata.io/v3/nfl/scores/json/CurrentWeek/2025REG", {
+      headers: { "Ocp-Apim-Subscription-Key": API_KEY }
+    })
+      .then(res => res.json())
+      .then(currentWeek => setWeek(currentWeek))
+      .catch(err => console.error("Error fetching current week:", err));
+  }, []);
 
-  const addParticipant = (name)=>{
-    setParticipants([...participants,{name,points:0,picks,fantasy,tiebreaker}]);
-  };
-
-  // ===== Weekly Reset =====
-  const resetWeek = ()=>{
-    setParticipants([]);
-    setPrizes([]);
-    setPicks(Object.fromEntries(GAMES.map(g=>[g.id,null])));
-    setFantasy(["","",""]);
-    setTiebreaker({team:"",points:""});
-    alert("✅ Weekly competition has been reset!");
-  };
+  // Fetch schedule once week is known
+  useEffect(() => {
+    if (!week) return;
+    fetch("https://api.sportsdata.io/v3/nfl/scores/json/Schedules/2025REG", {
+      headers: { "Ocp-Apim-Subscription-Key": API_KEY }
+    })
+      .then(res => res.json())
+      .then(data => {
+        const filteredGames = data.filter(g => g.Week === week);
+        const formatted = filteredGames.map(g => ({
+          id: `${g.AwayTeam}@${g.HomeTeam}`,
+          away: g.AwayTeam,
+          home: g.HomeTeam,
+          kickoff: new Date(g.Date).getTime()
+        }));
+        setGames(formatted);
+        setPicks(Object.fromEntries(formatted.map(g=>[g.id,null])));
+      })
+      .catch(err => console.error("Error fetching games:", err));
+  }, [week]);
 
   return (
-    <div style={{padding:"1rem", fontFamily:"sans-serif"}}>
-      <h1>Souldiers Fantasy Pick'ems Preview</h1>
+    <div className="p-6 min-h-screen bg-gradient-to-b from-souldiers-black via-souldiers-gray to-black text-souldiers-gold font-sans">
+      {/* Logo Banner */}
+      <img src="/logo.png" alt="Souldiers Logo" className="mx-auto mb-4 w-40" />
+
+      <h1 className="text-3xl font-bold mb-6 text-center text-souldiers-gold drop-shadow-[0_0_8px_#FFD700]">
+        Souldiers Fantasy Pick'ems
+      </h1>
+
       <DonateCard/>
-      {GAMES.map(g=><GameCard key={g.id} g={g} pick={picks[g.id]} setPick={(id,team)=>setPicks({...picks,[id]:team})}/>)}
+
+      {/* Week Display */}
+      <Card title="Current Week">
+        {week ? <p>Showing games for <b>Week {week}</b></p> : <p>Loading current week...</p>}
+      </Card>
+
+      {/* Live Games */}
+      {games.length === 0 ? (
+        <p className="text-center">Loading games...</p>
+      ) : (
+        games.map(g=>
+          <GameCard key={g.id} g={g} pick={picks[g.id]} setPick={(id,team)=>setPicks({...picks,[id]:team})}/>
+        )
+      )}
+
       <FantasySelector fantasy={fantasy} setFantasy={setFantasy}/>
       <TieBreaker tiebreaker={tiebreaker} setTiebreaker={setTiebreaker}/>
-      <ParticipantForm addParticipant={addParticipant}/>
-      <ParticipantDashboard participants={participants}/>
-      <CashPrizes prizes={cash}/>
-      <Leaderboard players={[...participants].sort((a,b)=>b.points-a.points)}/>
-      <AdminPrizes prizes={prizes} setPrizes={setPrizes}/>
-      
-      {/* Admin Reset Section */}
-      <div style={{marginTop:"1rem", border:"1px solid red", padding:"1rem", borderRadius:"8px"}}>
-        <h3>Admin Reset Control</h3>
-        <input
-          type="password"
-          placeholder="Enter Admin Code"
-          value={adminCode}
-          onChange={(e)=>setAdminCode(e.target.value)}
-          style={{marginRight:"0.5rem"}}
-        />
-        {adminCode==="SOULDIERS2025" && (
-          <button onClick={resetWeek} style={{padding:"0.5rem 1rem", background:"red", color:"white", border:"none", borderRadius:"6px"}}>
-            🔄 Reset Weekly Competition
-          </button>
-        )}
-      </div>
+      <Leaderboard players={[
+        {name:"User1",points:150},
+        {name:"User2",points:130},
+        {name:"User3",points:120},
+      ]}/>
     </div>
   );
 }
