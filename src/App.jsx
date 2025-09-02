@@ -95,8 +95,48 @@ function Leaderboard({ players }) {
     <div style={{marginTop:"1rem", border:"1px solid gray", padding:"1rem", borderRadius:"8px"}}>
       <h3>Top 10 Leaderboard</h3>
       <ol>
-        {players.map((p,i)=><li key={i}>{p.name} – {p.points} pts {i===0 && "🏆"} {i===1 && "🥈"}</li>)}
+        {players.slice(0,10).map((p,i)=>
+          <li key={i}>
+            {p.name} – {p.points} pts {i===0 && "🏆"} {i===1 && "🥈"}
+          </li>)}
       </ol>
+    </div>
+  );
+}
+
+// ===== Participant Entry =====
+function ParticipantForm({ addParticipant }) {
+  const [name,setName] = useState("");
+  const submit = ()=>{
+    if(name.trim()){
+      addParticipant(name.trim());
+      setName("");
+    }
+  };
+  return (
+    <div style={{marginTop:"1rem", border:"1px solid gray", padding:"1rem", borderRadius:"8px"}}>
+      <h3>Enter Competition</h3>
+      <input placeholder="Your Name" value={name} onChange={e=>setName(e.target.value)} />
+      <button onClick={submit} style={{marginLeft:"0.5rem"}}>Join</button>
+    </div>
+  );
+}
+
+// ===== Participant Dashboard =====
+function ParticipantDashboard({ participants }) {
+  if (participants.length === 0) return null;
+  return (
+    <div style={{marginTop:"1rem", border:"2px solid blue", padding:"1rem", borderRadius:"8px"}}>
+      <h3>Your Entry This Week</h3>
+      {participants.map((p,i)=>(
+        <div key={i} style={{marginBottom:"1rem", padding:"0.5rem", border:"1px solid gray", borderRadius:"6px"}}>
+          <div><b>{p.name}</b> — {p.points} pts</div>
+          <div><b>Picks:</b> {Object.entries(p.picks).map(([gid,team])=>team?`${gid}: ${team}`:"").join(", ")}</div>
+          <div><b>Fantasy:</b> {p.fantasy.filter(Boolean).join(", ")}</div>
+          <div><b>Tie-Breaker:</b> {p.tiebreaker.team} — {p.tiebreaker.points} pts</div>
+          <div style={{color:"green"}}>✅ Locked In</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -140,14 +180,31 @@ export default function App() {
   const [picks,setPicks] = useState(Object.fromEntries(GAMES.map(g=>[g.id,null])));
   const [fantasy,setFantasy] = useState(["","",""]);
   const [tiebreaker,setTiebreaker] = useState({team:"",points:""});
-  const [players,setPlayers] = useState([]);
+  const [participants,setParticipants] = useState([]);
   const [prizes,setPrizes] = useState([]);
+  const [adminCode,setAdminCode] = useState("");
   const cash = {firstMin:100,firstMax:200,secondMin:50,secondMax:100};
 
+  // simulate scoring (demo mode)
   useEffect(()=>{
-    const lb = Array.from({ length: 10 }).map((_,i)=>({name:`User${i+1}`,points:Math.floor(Math.random()*200)}));
-    setPlayers(lb.sort((a,b)=>b.points-a.points));
-  },[]);
+    if(participants.length>0){
+      setParticipants(prev=>prev.map(p=>({...p,points:Math.floor(Math.random()*200)})));
+    }
+  },[participants.length]);
+
+  const addParticipant = (name)=>{
+    setParticipants([...participants,{name,points:0,picks,fantasy,tiebreaker}]);
+  };
+
+  // ===== Weekly Reset =====
+  const resetWeek = ()=>{
+    setParticipants([]);
+    setPrizes([]);
+    setPicks(Object.fromEntries(GAMES.map(g=>[g.id,null])));
+    setFantasy(["","",""]);
+    setTiebreaker({team:"",points:""});
+    alert("✅ Weekly competition has been reset!");
+  };
 
   return (
     <div style={{padding:"1rem", fontFamily:"sans-serif"}}>
@@ -156,9 +213,28 @@ export default function App() {
       {GAMES.map(g=><GameCard key={g.id} g={g} pick={picks[g.id]} setPick={(id,team)=>setPicks({...picks,[id]:team})}/>)}
       <FantasySelector fantasy={fantasy} setFantasy={setFantasy}/>
       <TieBreaker tiebreaker={tiebreaker} setTiebreaker={setTiebreaker}/>
+      <ParticipantForm addParticipant={addParticipant}/>
+      <ParticipantDashboard participants={participants}/>
       <CashPrizes prizes={cash}/>
-      <Leaderboard players={players}/>
+      <Leaderboard players={[...participants].sort((a,b)=>b.points-a.points)}/>
       <AdminPrizes prizes={prizes} setPrizes={setPrizes}/>
+      
+      {/* Admin Reset Section */}
+      <div style={{marginTop:"1rem", border:"1px solid red", padding:"1rem", borderRadius:"8px"}}>
+        <h3>Admin Reset Control</h3>
+        <input
+          type="password"
+          placeholder="Enter Admin Code"
+          value={adminCode}
+          onChange={(e)=>setAdminCode(e.target.value)}
+          style={{marginRight:"0.5rem"}}
+        />
+        {adminCode==="SOULDIERS2025" && (
+          <button onClick={resetWeek} style={{padding:"0.5rem 1rem", background:"red", color:"white", border:"none", borderRadius:"6px"}}>
+            🔄 Reset Weekly Competition
+          </button>
+        )}
+      </div>
     </div>
   );
 }
